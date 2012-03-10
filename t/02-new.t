@@ -10,7 +10,7 @@ use Test::More qw( no_plan );
 use_ok('FreeRADIUS::Database') ;
 can_ok( 'FreeRADIUS::Database', 'new' );
 
-my $test_config = 'src/conf/FreeRADIUS_Database.conf-dist';
+my $test_config = 'src/conf/freeradius_database.conf-dist';
 
 { # isa FreeRADIUS::Database
 

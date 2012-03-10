@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-$ENV{ FreeRADIUS_Database_CONFIG } = 't/FreeRADIUS_Database.conf-dist';
+$ENV{ FREERADIUS_DATABASE_CONFIG } = 't/freeradius_database.conf-dist';
 
 use Test::More qw( no_plan );
 use DateTime;
@@ -12,7 +12,7 @@ use Data::Dumper;
 use_ok('FreeRADIUS::Database');
 can_ok( 'FreeRADIUS::Database', 'update_ras_name' );
 
-$ENV{ FreeRADIUS_Database_CONFIG } = 't/FreeRADIUS_Database.conf-dist';
+$ENV{ FREERADIUS_DATABASE_CONFIG } = 't/freeradius_database.conf-dist';
 
 {  
 	my $r = FreeRADIUS::Database->new();

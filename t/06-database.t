@@ -11,7 +11,7 @@ use_ok('FreeRADIUS::Database::Storage::Replicated');
 
 can_ok( 'FreeRADIUS::Database', '_schema' );
 
-$ENV{ FreeRADIUS_Database_CONFIG } = 't/FreeRADIUS_Database.conf-dist';
+$ENV{ FREERADIUS_DATABASE_CONFIG } = 't/freeradius_database.conf-dist';
 
 { # test schema availability
 

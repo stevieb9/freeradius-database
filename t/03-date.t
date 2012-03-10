@@ -8,7 +8,7 @@ use Test::More qw( no_plan );
 use_ok('FreeRADIUS::Database') ;
 can_ok( 'FreeRADIUS::Database', 'date' );
 
-$ENV{ FreeRADIUS_Database_CONFIG } = 't/FreeRADIUS_Database.conf-dist';
+$ENV{ FREERADIUS_DATABASE_CONFIG } = 't/freeradius_database.conf-dist';
 
 { #date bad param
 
