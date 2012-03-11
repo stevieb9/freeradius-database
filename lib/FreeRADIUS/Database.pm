@@ -9,7 +9,7 @@ $Carp::Verbose = 1;
 use Config::Tiny;
 use DBIx::Class;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 # initialization
 

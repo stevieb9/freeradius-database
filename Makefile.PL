@@ -118,6 +118,13 @@ WriteMakefile(
 		'DBIx::Recordset'		=> 0, # deprecate
 		'DBIx::Class'			=> 0,
 	},
+    META_MERGE => {
+        resources => {
+            bugtracker  =>      'https://bitbucket.org/spek/freeradius-database/issues',
+            repository  =>      'https://bitbucket.org/spek/freeradius-database',
+        },
+    },
+
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'FreeRADIUS-*' },
 
