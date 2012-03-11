@@ -33,7 +33,7 @@ during 'perl Makefile.PL' stage, or /usr/local/etc by default.
 You will need to rename the configuration file from freeradius_database.conf-dist 
 to freeradius_database.conf, and then set the config variables to suit your needs.
 
-The configuration file has it's own documentation. See
+The configuration file has its own documentation. See
 
    perldoc FreeRADIUS::freeradius_database.conf 
 

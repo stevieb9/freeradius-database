@@ -93,11 +93,11 @@ Used exclusively for `make test`. This sets the system to use a test-only
 configuration file, and forces the system to use a test-only database which
 contains a pre-defined dataset.
 
-Do not run the system with this set to true.
+THIS IS ON BY DEFAULT. You will need to disable it.
 
 Valid values: 0, 1.
 
-Default: off 
+Default: ON 
 
 
 

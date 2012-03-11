@@ -1,5 +1,8 @@
 Revision history for Perl extension FreeRADIUS::Database.
 
+0.05 20120310
+    - multiple POD fixes
+
 0.04 20120310
     - renamed project to FreeRADIUS::Database from ISP::RADIUS
     - retab to 4 spcace tabs

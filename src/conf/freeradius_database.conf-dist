@@ -1,7 +1,7 @@
 ; FreeRADIUS::Database configuration file
 
 [VERSION]
-version                 = 0.04
+version                 = 0.05
 
 [Global]
 timezone                = America/New_York
@@ -10,7 +10,7 @@ delete_after_archive    = 1 ; delete radacct month after archive?
 months_after_archive    = 3
 config_dir              = /usr/local/etc
 script_dir              = /usr/local/sbin
-in_test_mode            = 0
+in_test_mode            = 1
 
 [RAS]
 ; used for RAS classification
