@@ -908,21 +908,17 @@ maintenance and mangement control of the backend MySQL database.
 
 =head2 new({ config => FILE })
 
-Instantiates a new FreeRADIUS::Database object. The constructor obeys inheritance calls.
-
-Configures the FreeRADIUS::Database object from a configuration file.
+Instantiates a new FreeRADIUS::Database object. 
 
 The default configuration file can be overridden in two ways. The first is sending
 in a 'config' parameter with the alternate configuration file name. This
 parameter must be supplied within a hash reference.
 
 You can also override the default configuration file location by setting 
-$ENV{ FREERADIUS_DATABASE_CONFIG } environment variable prior to making the call to new().
+the FREERADIUS_DATABASE_CONFIG } environment variable prior to making the call to new().
 
 If a configuration file can not be found or read, or the object can not be created,
 the return will be undef.
-
-Returns undef upon failure, and a new FreeRADIUS::Database object upon success.
 
 
 
@@ -1076,7 +1072,7 @@ If year is specified, returns the string 'YYYY'. If 'month' is specified,
 the return is 'YYYY-MM'. For day, returns 'YYYY-MM-DD'.
 
 The method will generate a 'now' DateTime object to work with, unless a pre-created
-DateTime object is passed in with the 'datetime' parameter.
+DateTime object is passed in with the optional 'datetime' parameter.
 
 Returns a DateTime object of the present date/time if no parameters are passed in.
 
@@ -1106,8 +1102,9 @@ will be returned.
 =head2 update_ras_name( { day => $day } )
 
 This method rewrites the NASIPAddress in the RADIUS database's radacct table.
-Generally, it is used to classify groups of NAS IP addresses and assign them
-a name.
+Generally, it is used to classify groups of RAS IP addresses and assign them
+a name. For example, you can group all of your ADSL RASs IP addresses into
+logical groups for UBB.
 
 The day parameter is mandatory, and must be a DateTime object, after being
 called with $datetime->ymd(). This method will operate on the date 
@@ -1124,11 +1121,13 @@ Returns 0 upon completion/success.
 
 =head1 AUTHOR
 
-Steve Bertrand, E<lt>steve@ibctech.caE<gt>
+Steve Bertrand, E<lt>steveb@cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT
 
-Copyright (C) 2009 by Steve Bertrand
+Copyright (C) 2012 by Steve Bertrand
+
+=head1 LICENSE
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.9 or,

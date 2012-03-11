@@ -22,8 +22,6 @@ and by the system internally.
 Contains the system version number. Do not change it.
 
 
-
-
 =head2 [ Global ]
 
 Configuration settings that are used globally by the system.
@@ -38,7 +36,9 @@ Default: America/New_York
 =head3 ras_classification
 
 You can aggregate NAS devices into classes based on their IP address
-or name by enabling this setting.
+or name by enabling this setting. Enabling this will rename all of your
+NASIPAddress column entries so long as the IP of the NAS is listed
+after a NAS name classification in the config file.
 
 See the [ RAS ] section on classification/aggregating details.
 
@@ -97,7 +97,7 @@ Do not run the system with this set to true.
 
 Valid values: 0, 1.
 
-Default: on ( for now. Please change it! )
+Default: off 
 
 
 
@@ -114,8 +114,8 @@ using this classification system, you can aggregate your user sessions
 into one 'class'.
 
 If aggregating daily totals for user 'steveb', who logged in numerous times
-across four BASs within the day because of modem resets, his daily
-totals from all four BASs would be summed together and collectively
+across four RASs within the day because of modem resets, his daily
+totals from all four RASs would be summed together and collectively
 aggregated into a single entry under the 'ADSL' `class`.
 
 If the [ Global ] configuration varable ras_classification is set to false,
@@ -125,7 +125,8 @@ A class is defined by assigning a name, followed by a comma-separated list
 of IP addresses/prefixes without their trailing prefix length, or a comma
 separated list of NAS names.
 
-Currently, the classification is done via a regex-like check.
+Currently, the classification is done via a regex-like check, and needs
+significant improvement to be able to use proper x.x.x.x/xx style prefixes.
 
 For example:
 

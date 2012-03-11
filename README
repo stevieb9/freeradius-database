@@ -16,24 +16,31 @@ To install this module type the following:
    make install
 
    # if you want to install the utilities
+
    make scripts 
+
+
 
 NOTES
 
-The configuration file will be installed into the directory you
-specified during 'perl Makefile.PL' stage, or /usr/local/etc by
-default.
+- This distribution comes with a few management scripts that automate
+radacct grouping and aggregation tasks that aid in both database
+maintenance and UBB-type tasks
 
-You will need to rename the configuration file from
-freeradius_database.conf-dist to freeradius_database.conf, and then set the config
-variables to suit your needs.
+- The configuration file will be installed into the directory you specified 
+during 'perl Makefile.PL' stage, or /usr/local/etc by default.
+
+You will need to rename the configuration file from freeradius_database.conf-dist 
+to freeradius_database.conf, and then set the config variables to suit your needs.
 
 The configuration file has it's own documentation. See
 
-   perldoc FreeRADIUS::Database::freeradius_database.conf 
+   perldoc FreeRADIUS::freeradius_database.conf 
 
-Currently, only MySQL has been used in production. The tests use
+- Currently, only MySQL has been used in production. The tests use
 a dedicated SQLite database.
+
+
 
 DATABASE SCHEMA
 
@@ -45,6 +52,10 @@ The schema files are located in src/schema. To implement:
 
    mysql -u user -p [-h host] radius_db < src/schema/aggregate_daily.sql
    mysql -u user -p [-h host] radius_db < src/schema/aggregate_monthly.sql
+
+... you'd be well advised to make a backup of your RADIUS database first.
+
+  
 
 ACCOMPANYING SCRIPTS
 
@@ -67,13 +78,21 @@ following the completion of the daily script. It may be prudent
 to chain the commands into a single cron entry to ensure
 that daily completes prior to the monthly script running.  
 
+
+
 DEPENDENCIES
 
 See the Makefile.PL file.
 
-COPYRIGHT AND LICENCE
 
-Copyright (C) 2010 by Steve Bertrand <steveb@cpan.org>
+
+COPYRIGHT
+
+Copyright (C) 2012 by Steve Bertrand <steveb@cpan.org>
+
+
+
+LICENSE
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.9 or,
