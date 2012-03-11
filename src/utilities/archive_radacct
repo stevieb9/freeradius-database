@@ -22,7 +22,8 @@ my $result = GetOptions(
 pod2usage({ -verbose => 1 }) if $help;
 pod2usage({ -verbose => 2 }) if $man;
 
-pod2usage({        -msg        => "\n\n--month argument requires a parameter in the form YYYY-MM\n\n",
+pod2usage({        
+        -msg        => "\n\n--month argument requires a parameter in the form YYYY-MM\n\n",
         -verbose    => 1,
     }) if $month !~ m{ \A \d{4}-(0|1)\d \z }xms;
 
@@ -72,7 +73,23 @@ existent three months ago.
 
 archive_radacct is a utility script for the FreeRADIUS::Database module.
 
-It deletes a months worth of entries in the `radacct` table, after this
-data has been successfully transferred into a monthly archive table.
+It archives data from the `radacct' table into a newly created table
+in the database. If the 'delete_after_archive' directive in the
+freeradius_database.conf file is enabled, we will delete from the
+radacct table after the archive is complete.
+
+=head1 AUTHOR
+
+Steve Bertrand, E<lt>steveb@cpan.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2012 by Steve Bertrand
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.9 or,
+at your option, any later version of Perl 5 you may have available.
 
 =cut

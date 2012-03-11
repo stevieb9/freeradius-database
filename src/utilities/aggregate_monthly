@@ -98,4 +98,18 @@ aggregate_monthly is a utility script for the FreeRADIUS::Database module.
 It aggregates the entries from the aggregate_daily database table into
 the aggregate_monthly table, creating one row per user, per NAS.
 
+=head1 AUTHOR
+
+Steve Bertrand, E<lt>steveb@cpan.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2012 by Steve Bertrand
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.9 or,
+at your option, any later version of Perl 5 you may have available.
+
 =cut
