@@ -15,18 +15,18 @@ can_ok( 'FreeRADIUS::Database', 'update_ras_name' );
 $ENV{ FREERADIUS_DATABASE_CONFIG } = 't/freeradius_database.conf-dist';
 
 {  
-	my $r = FreeRADIUS::Database->new();
-	
-	my $date    = DateTime->new(
+    my $r = FreeRADIUS::Database->new();
+    
+    my $date    = DateTime->new(
                             time_zone   => $r->TIMEZONE(),
                             year        => 2009,
                             month       => 02,
                             day         => 02,
                         );
 
-	my $day = $date->ymd();
-	
-	my $ret = $r->update_ras_name({ day => $day });
+    my $day = $date->ymd();
+    
+    my $ret = $r->update_ras_name({ day => $day });
 
-	is ( $ret, 0, "update_ras_name() returns 0 upon completion" );
+    is ( $ret, 0, "update_ras_name() returns 0 upon completion" );
 }

@@ -15,34 +15,34 @@ our $VERSION = '0.04';
 
 sub new {
 
-	my $class	= shift;
-	my $params	= shift;
+    my $class   = shift;
+    my $params  = shift;
 
-	my $conf_file = $params->{ config };
+    my $conf_file = $params->{ config };
 
-	my $self	= {};
+    my $self    = {};
 
-	bless $self, $class;
+    bless $self, $class;
 
-	my $config_ok;
+    my $config_ok;
 
-	if ( $conf_file ) {
-		$config_ok = $self->_configure({ config => $conf_file });
-	}
-	else {
-		$config_ok = $self->_configure();
-	}
+    if ( $conf_file ) {
+        $config_ok = $self->_configure({ config => $conf_file });
+    }
+    else {
+        $config_ok = $self->_configure();
+    }
 
-	return if ! $config_ok;
+    return if ! $config_ok;
 
-	return $self;
+    return $self;
 }
 sub _configure {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	# configuration file bootstrap
+    # configuration file bootstrap
     
     my @locations = qw( env param default );
     
@@ -58,22 +58,22 @@ sub _configure {
         $conf_file = '/usr/local/etc/freeradius_database.conf';
     }
     
-	if ( ! $conf_file || ! -e $conf_file ) {
-		return 0;
-	}
+    if ( ! $conf_file || ! -e $conf_file ) {
+        return 0;
+    }
 
-	my $config	= Config::Tiny->read( $conf_file );
-	
-	for my $section ( keys %$config ) {
-	
-		# handle the RASs manually, and set up the 
-		# MySQL regexes by hand
+    my $config  = Config::Tiny->read( $conf_file );
+    
+    for my $section ( keys %$config ) {
+    
+        # handle the RASs manually, and set up the 
+        # MySQL regexes by hand
 
-		if ( $section eq 'RAS' ) {
+        if ( $section eq 'RAS' ) {
 
-			next if defined &RAS;
+            next if defined &RAS;
 
-			{
+            {
                 my $ras_href;
 
                 while ( my( $ras, $ips ) = ( each %{ $config->{ $section } } )) {
@@ -89,734 +89,734 @@ sub _configure {
                 *RAS = sub {
                     return $ras_href;
                 }
-            }		
-		}			
+            }       
+        }           
 
-		# do the 'easy-to-automate' config members
+        # do the 'easy-to-automate' config members
 
-		while ( my ( $member, $value ) = ( each %{ $config->{ $section }  } ) ) {
+        while ( my ( $member, $value ) = ( each %{ $config->{ $section }  } ) ) {
 
-			$member = uc $member;
-			
-			$self->{ config }{ $member } = $value;
+            $member = uc $member;
+            
+            $self->{ config }{ $member } = $value;
 
-			no strict 'refs';
+            no strict 'refs';
 
-			*$member = sub {
-				my $self	= shift;
-				$self->{ config }{ $member } = shift if @_;
-				return $self->{ config }{ $member };
-				
-			} if ! defined &$member;
-		}
-	}
+            *$member = sub {
+                my $self    = shift;
+                $self->{ config }{ $member } = shift if @_;
+                return $self->{ config }{ $member };
+                
+            } if ! defined &$member;
+        }
+    }
 
-	return $self;
+    return $self;
 }
 
 # accounting
 
 sub aggregate_daily {
 
-	my $self	= shift;
-	my $params	= shift if @_;
+    my $self    = shift;
+    my $params  = shift if @_;
 
-	my $classify_ras = $self->RAS_CLASSIFICATION();
+    my $classify_ras = $self->RAS_CLASSIFICATION();
 
-	# check to see if the operator wants to override the 
-	# config variable
+    # check to see if the operator wants to override the 
+    # config variable
 
-	$classify_ras = $params->{ classify } if exists $params->{ classify };
+    $classify_ras = $params->{ classify } if exists $params->{ classify };
 
-	if ( exists $params->{ day } && $params->{ day } !~ m{ \A \d{4}-\d{2}-\d{2} \z }xms ) {
-		croak "The 'day' param must be in the form YYYY-MM-DD: $!";
-	}
+    if ( exists $params->{ day } && $params->{ day } !~ m{ \A \d{4}-\d{2}-\d{2} \z }xms ) {
+        croak "The 'day' param must be in the form YYYY-MM-DD: $!";
+    }
 
-	my $day = $params->{ day };
+    my $day = $params->{ day };
 
-	if ( ! $day ) {
-		my $datetime = $self->date();
-		$datetime->subtract( days	=> 1 );
-		$day = $datetime->ymd();
-	}
+    if ( ! $day ) {
+        my $datetime = $self->date();
+        $datetime->subtract( days   => 1 );
+        $day = $datetime->ymd();
+    }
 
-	my $schema = $self->_schema();
+    my $schema = $self->_schema();
 
-	# UPDATE
+    # UPDATE
 
-	if ( $classify_ras ) {
-	
-		$self->update_ras_name( {
-						day	=> $day,
-					} );	
-	}
+    if ( $classify_ras ) {
+    
+        $self->update_ras_name( {
+                        day => $day,
+                    } );    
+    }
 
-	# DELETE if this is an overlay run  
+    # DELETE if this is an overlay run  
 
-	$schema->resultset( 'DailyAgg' )->search({ acctdate => $day })->delete();
+    $schema->resultset( 'DailyAgg' )->search({ acctdate => $day })->delete();
 
-	# FETCH
+    # FETCH
 
-	my $daily_fetch_rs = $schema->resultset( 'Radacct' )->search(
-	
-			{ 
-		   		'acctstoptime' => { like => "$day%" },  	
-			},{
-		
-			select => [
-				'username',
-				{ count => 'radacctid' },
-				{ sum	=> 'acctsessiontime' },
-				{ max	=> 'acctsessiontime' },
-				{ min	=> 'acctsessiontime' },
-				{ sum	=> 'acctinputoctets' },
-				{ sum	=> 'acctoutputoctets' },
-				'nasipaddress',
-			],
+    my $daily_fetch_rs = $schema->resultset( 'Radacct' )->search(
+    
+            { 
+                'acctstoptime' => { like => "$day%" },      
+            },{
+        
+            select => [
+                'username',
+                { count => 'radacctid' },
+                { sum   => 'acctsessiontime' },
+                { max   => 'acctsessiontime' },
+                { min   => 'acctsessiontime' },
+                { sum   => 'acctinputoctets' },
+                { sum   => 'acctoutputoctets' },
+                'nasipaddress',
+            ],
 
-			group_by => [ qw/ username nasipaddress / ],
+            group_by => [ qw/ username nasipaddress / ],
 
-			as		 => [ qw/ 	
-								UserName
-								ConnNum
-								ConnTotDuration
-								ConnMaxDuration
-								ConnMinDuration
-							 	InputOctets	
-								OutputOctets
-								NASIPAddress
-							/,
-						],
-		});
+            as       => [ qw/   
+                                UserName
+                                ConnNum
+                                ConnTotDuration
+                                ConnMaxDuration
+                                ConnMinDuration
+                                InputOctets 
+                                OutputOctets
+                                NASIPAddress
+                            /,
+                        ],
+        });
 
-	$daily_fetch_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
-	
-	my $agg_table = $schema->resultset( 'DailyAgg' );
+    $daily_fetch_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
+    
+    my $agg_table = $schema->resultset( 'DailyAgg' );
 
-	while ( my $daily_entry = $daily_fetch_rs->next() ) {
-		
-		$daily_entry->{ AcctDate } = $day;
-		$agg_table->create( $daily_entry );
-	}
+    while ( my $daily_entry = $daily_fetch_rs->next() ) {
+        
+        $daily_entry->{ AcctDate } = $day;
+        $agg_table->create( $daily_entry );
+    }
 
-	return 0;
+    return 0;
 }
 sub aggregate_monthly {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $month;
+    my $month;
 
-	if ( $params->{ month } ) {
-		$month = $params->{ month };
-		if ( $month !~ m{ \A \d{4}-\d{2} \z }xms ){
-			croak "The 'month' param must be in the form YYYY-MM: $!";
-		}
-	}
-	else {
-		my $datetime = $self->date();
-		$datetime->subtract( days => 1 );
-		$month = $self->date( { get => 'month', datetime => $datetime } );
-	}
+    if ( $params->{ month } ) {
+        $month = $params->{ month };
+        if ( $month !~ m{ \A \d{4}-\d{2} \z }xms ){
+            croak "The 'month' param must be in the form YYYY-MM: $!";
+        }
+    }
+    else {
+        my $datetime = $self->date();
+        $datetime->subtract( days => 1 );
+        $month = $self->date( { get => 'month', datetime => $datetime } );
+    }
 
-	my $schema = $self->_schema();
+    my $schema = $self->_schema();
 
-	# DELETE if overlay run
+    # DELETE if overlay run
 
-	$schema->resultset( 'MonthlyAgg' )->search({ 
-											acctdate => { like => "$month%" }, 
-										})->delete();
+    $schema->resultset( 'MonthlyAgg' )->search({ 
+                                            acctdate => { like => "$month%" }, 
+                                        })->delete();
 
-	my $month_rs = $schema->resultset( 'DailyAgg' )->search(
-					
-					{
-						'AcctDate' => { like => "$month%" },
-					},
-					{
-						select => [
-									'UserName',
-									{ sum	=> 'ConnNum' },
-									{ sum	=> 'ConnTotDuration' },
-									{ max	=> 'ConnMaxDuration' },
-									{ min	=> 'ConnMinDuration' },
-									{ sum	=> 'InputOctets' },
-									{ sum	=> 'OutputOctets' },
-									'NASIPAddress',
-						],
+    my $month_rs = $schema->resultset( 'DailyAgg' )->search(
+                    
+                    {
+                        'AcctDate' => { like => "$month%" },
+                    },
+                    {
+                        select => [
+                                    'UserName',
+                                    { sum   => 'ConnNum' },
+                                    { sum   => 'ConnTotDuration' },
+                                    { max   => 'ConnMaxDuration' },
+                                    { min   => 'ConnMinDuration' },
+                                    { sum   => 'InputOctets' },
+                                    { sum   => 'OutputOctets' },
+                                    'NASIPAddress',
+                        ],
 
-						group_by => [ qw/ UserName NASIPAddress / ],
+                        group_by => [ qw/ UserName NASIPAddress / ],
 
-						as		 => [ qw/
-										UserName
-										ConnNum
-										ConnTotDuration
-										ConnMaxDuration
-										ConnMinDuration
-										InputOctets
-										OutputOctets
-										NASIPAddress
-										/,
-									],
-					}
-			);
+                        as       => [ qw/
+                                        UserName
+                                        ConnNum
+                                        ConnTotDuration
+                                        ConnMaxDuration
+                                        ConnMinDuration
+                                        InputOctets
+                                        OutputOctets
+                                        NASIPAddress
+                                        /,
+                                    ],
+                    }
+            );
 
-	$month_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
+    $month_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
 
-	my $agg_table = $schema->resultset( 'MonthlyAgg' );
+    my $agg_table = $schema->resultset( 'MonthlyAgg' );
 
-	while ( my $month_entry = $month_rs->next() ) {
+    while ( my $month_entry = $month_rs->next() ) {
 
-		$month_entry->{ AcctDate } = $month . "-00";
-		$agg_table->create( $month_entry );
-	}
+        $month_entry->{ AcctDate } = $month . "-00";
+        $agg_table->create( $month_entry );
+    }
 
-	return 0;
+    return 0;
 }
 
 # archiving & management
 
 sub archive_radacct {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $month;
+    my $month;
 
-	if ( $params->{ month } ) {
-		$month = $params->{ month };
-	}
-	else {
-		my $datetime = $self->date();
-		$datetime->subtract( months => $self->MONTHS_AFTER_ARCHIVE() );
-		$month = $self->date( { get => 'month', datetime => $datetime } );
-	}
+    if ( $params->{ month } ) {
+        $month = $params->{ month };
+    }
+    else {
+        my $datetime = $self->date();
+        $datetime->subtract( months => $self->MONTHS_AFTER_ARCHIVE() );
+        $month = $self->date( { get => 'month', datetime => $datetime } );
+    }
 
-	my $dbh = $self->_db_handle();
+    my $dbh = $self->_db_handle();
 
-	my $archive_table_name = "radacct_${ month }";
-	$archive_table_name =~ s/-//;
+    my $archive_table_name = "radacct_${ month }";
+    $archive_table_name =~ s/-//;
 
-	my $table_ok = $self->_create_archive_table( { 
-									tablename => $archive_table_name 
-								} );
-	
-	if ( $table_ok ) {
+    my $table_ok = $self->_create_archive_table( { 
+                                    tablename => $archive_table_name 
+                                } );
+    
+    if ( $table_ok ) {
 
-		my $archive_query = $dbh->prepare("
-			INSERT INTO $archive_table_name
-			SELECT * FROM radacct
-			WHERE AcctStopTime LIKE '$month%'
-		") or die $DBI::errstr;
+        my $archive_query = $dbh->prepare("
+            INSERT INTO $archive_table_name
+            SELECT * FROM radacct
+            WHERE AcctStopTime LIKE '$month%'
+        ") or die $DBI::errstr;
 
-		$archive_query->execute();
-	}
-	else {
-		die "Could not create the archive DB table!: $!";
-	}
+        $archive_query->execute();
+    }
+    else {
+        die "Could not create the archive DB table!: $!";
+    }
 
-	# delete, if necessary
+    # delete, if necessary
 
-	if ( $self->DELETE_AFTER_ARCHIVE() ) {
+    if ( $self->DELETE_AFTER_ARCHIVE() ) {
 
-		my $delete_query = $dbh->prepare("
-			DELETE FROM radacct
-			WHERE AcctStopTime LIKE '$month%'
-		") or die $DBI::errstr;
-	}
+        my $delete_query = $dbh->prepare("
+            DELETE FROM radacct
+            WHERE AcctStopTime LIKE '$month%'
+        ") or die $DBI::errstr;
+    }
 
-	return 0;
+    return 0;
 }
 
 # statistics
 
 sub daily_login_totals {
 
-	use DateTime::Format::Strptime;
+    use DateTime::Format::Strptime;
 
-	my $self		= shift;
-	my $params		= shift;
+    my $self        = shift;
+    my $params      = shift;
 
-	my $username	= $params->{ username };
-	my $nas			= $params->{ nas };
-	my $day 		= $params->{ day };
-	my $raw			= $params->{ raw };
+    my $username    = $params->{ username };
+    my $nas         = $params->{ nas };
+    my $day         = $params->{ day };
+    my $raw         = $params->{ raw };
 
-	my $schema = $self->_schema();
+    my $schema = $self->_schema();
 
-	my $day_total_rs = $schema->resultset( 'DailyAgg' )->search(
-									{
-										'username'		=> $username,
-										'acctdate'		=> $day,
-										'nasipaddress'	=> $nas,
-									},
-									{
-										select	=> [ qw /
-														ConnTotDuration
-														InputOctets
-														OutputOctets
-														AcctDate
-														/,
-													],
-										
-										as		=> [ qw /
-														duration
-														upload
-														download
-														date
-														/,
-													],	
-	
-									});
+    my $day_total_rs = $schema->resultset( 'DailyAgg' )->search(
+                                    {
+                                        'username'      => $username,
+                                        'acctdate'      => $day,
+                                        'nasipaddress'  => $nas,
+                                    },
+                                    {
+                                        select  => [ qw /
+                                                        ConnTotDuration
+                                                        InputOctets
+                                                        OutputOctets
+                                                        AcctDate
+                                                        /,
+                                                    ],
+                                        
+                                        as      => [ qw /
+                                                        duration
+                                                        upload
+                                                        download
+                                                        date
+                                                        /,
+                                                    ],  
+    
+                                    });
 
-	# return undef if no rows found
+    # return undef if no rows found
 
-	return if ! $day_total_rs->count();
+    return if ! $day_total_rs->count();
 
-	# extract only the hash of data
+    # extract only the hash of data
 
-	$day_total_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
+    $day_total_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
 
-	my $total = $day_total_rs->first();
+    my $total = $day_total_rs->first();
 
-	if ( ! $raw ) {
-		
-		$total->{ upload }		
-			= $self->bytes_to_megabytes( $total->{ upload } );
-		
-		$total->{ download }	
-			= $self->bytes_to_megabytes( $total->{ download } );
-		
-		$total->{ duration }	
-			= $self->seconds_to_hours( $total->{ duration } );
-	}
+    if ( ! $raw ) {
+        
+        $total->{ upload }      
+            = $self->bytes_to_megabytes( $total->{ upload } );
+        
+        $total->{ download }    
+            = $self->bytes_to_megabytes( $total->{ download } );
+        
+        $total->{ duration }    
+            = $self->seconds_to_hours( $total->{ duration } );
+    }
 
-	return $total;
+    return $total;
 }
 sub monthly_login_totals {
 
-	use DateTime::Format::Strptime;
+    use DateTime::Format::Strptime;
 
-	my $self		= shift;
-	my $params		= shift;
+    my $self        = shift;
+    my $params      = shift;
 
-	my $username	= $params->{ username };
-	my $nas			= $params->{ nas };			# ip, name or class
-	my $month		= $params->{ month };		# YYYY-MM
-	my $raw			= $params->{ raw };
+    my $username    = $params->{ username };
+    my $nas         = $params->{ nas };         # ip, name or class
+    my $month       = $params->{ month };       # YYYY-MM
+    my $raw         = $params->{ raw };
 
-	my $num_months	= ( $params->{ num_months } )
-		? $params->{ num_months }
-		: 11;
+    my $num_months  = ( $params->{ num_months } )
+        ? $params->{ num_months }
+        : 11;
 
-	# return undef if num_months is bad
+    # return undef if num_months is bad
 
-	if ( ! ( $num_months < 36 ) ) {
-		return;
-	}
+    if ( ! ( $num_months < 36 ) ) {
+        return;
+    }
 
-	$month = ( $month )
-		? $month
-		: '';
+    $month = ( $month )
+        ? $month
+        : '';
 
-	my $schema = $self->_schema();
+    my $schema = $self->_schema();
 
-	my $month_total_rs = $schema->resultset( 'MonthlyAgg' )->search(
-									{
-										UserName 	=> $username,
-										AcctDate	=> { like => "$month%" },
-										NASIPAddress => $nas,
-									},
-									{
+    my $month_total_rs = $schema->resultset( 'MonthlyAgg' )->search(
+                                    {
+                                        UserName    => $username,
+                                        AcctDate    => { like => "$month%" },
+                                        NASIPAddress => $nas,
+                                    },
+                                    {
 
-									select	=> [ qw/
-												ConnTotDuration
-												AcctDate
-												InputOctets
-												OutputOctets
-												/,
-											],
-									
-									{ order_by => 'AcctDate' },
-									
-									{ limit		=> $num_months },
+                                    select  => [ qw/
+                                                ConnTotDuration
+                                                AcctDate
+                                                InputOctets
+                                                OutputOctets
+                                                /,
+                                            ],
+                                    
+                                    { order_by => 'AcctDate' },
+                                    
+                                    { limit     => $num_months },
 
-									as	=> [ qw/
-												duration
-												date
-												upload
-												download
-											/,
-										],
+                                    as  => [ qw/
+                                                duration
+                                                date
+                                                upload
+                                                download
+                                            /,
+                                        ],
 
-							});
+                            });
 
-	# return undef if nothing was found
+    # return undef if nothing was found
 
-	return if ! $month_total_rs->count();
+    return if ! $month_total_rs->count();
 
-	$month_total_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
+    $month_total_rs->result_class( 'DBIx::Class::ResultClass::HashRefInflator' );
 
-	my $month_totals_aref;
+    my $month_totals_aref;
 
-	while ( my $month_history = $month_total_rs->next() ) {
+    while ( my $month_history = $month_total_rs->next() ) {
 
-		if ( ! $raw ) {
-		
-		$month_history->{ upload } = ( $month_history->{ upload } > 1000000000 )
-			? $self->bytes_to_gigabytes( $month_history->{ upload } )	
-			: $self->bytes_to_megabytes( $month_history->{ upload } );
+        if ( ! $raw ) {
+        
+        $month_history->{ upload } = ( $month_history->{ upload } > 1000000000 )
+            ? $self->bytes_to_gigabytes( $month_history->{ upload } )   
+            : $self->bytes_to_megabytes( $month_history->{ upload } );
 
-		$month_history->{ download } = ( $month_history->{ download } > 1000000000 ) 
-			? $self->bytes_to_gigabytes( $month_history->{ download } )	
-			: $self->bytes_to_megabytes( $month_history->{ download } );
+        $month_history->{ download } = ( $month_history->{ download } > 1000000000 ) 
+            ? $self->bytes_to_gigabytes( $month_history->{ download } ) 
+            : $self->bytes_to_megabytes( $month_history->{ download } );
 
-		$month_history->{ duration } 
-			= $self->seconds_to_hours( $month_history->{ duration } )	
-	
-		}
-			
-		# convert to humanized date
+        $month_history->{ duration } 
+            = $self->seconds_to_hours( $month_history->{ duration } )   
+    
+        }
+            
+        # convert to humanized date
 
-		my $date_format = DateTime::Format::Strptime->new(
-													pattern => '%y-%m-00',
-												);
-		my $datetime 	
-			= $date_format->parse_datetime( $month_history->{ date } );
-		
-		my $human_date	
-			= $datetime->month_abbr() . " " . $datetime->year();
+        my $date_format = DateTime::Format::Strptime->new(
+                                                    pattern => '%y-%m-00',
+                                                );
+        my $datetime    
+            = $date_format->parse_datetime( $month_history->{ date } );
+        
+        my $human_date  
+            = $datetime->month_abbr() . " " . $datetime->year();
 
-		push ( @{ $month_totals_aref },  $month_history );
-	}
+        push ( @{ $month_totals_aref },  $month_history );
+    }
 
-	return $month_totals_aref;
+    return $month_totals_aref;
 }
 sub month_hours_used {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $username = $params->{ username };
+    my $username = $params->{ username };
 
-	my $nas = ( $params->{ nas } )
-		? $params->{ nas }
-		: 'dialup';
+    my $nas = ( $params->{ nas } )
+        ? $params->{ nas }
+        : 'dialup';
 
-	my $month;
+    my $month;
 
-	if ( exists $params->{ month } ) {
-		$month = $params->{ month };
-		$month .= '-00';
-	}
-	else {
-		my $datetime = $self->date();
-		$month = $self->date({ get => 'month', datetime => $datetime });
-		$month .= '-00';
-	}
+    if ( exists $params->{ month } ) {
+        $month = $params->{ month };
+        $month .= '-00';
+    }
+    else {
+        my $datetime = $self->date();
+        $month = $self->date({ get => 'month', datetime => $datetime });
+        $month .= '-00';
+    }
 
-	my $schema	= $self->_schema();
+    my $schema  = $self->_schema();
 
-	my $rs = $schema->resultset( 'MonthlyAgg' )->find({
-					username		=> $username,
-					nasipaddress	=> $nas,
-					acctdate		=> $month ,
-				});
+    my $rs = $schema->resultset( 'MonthlyAgg' )->find({
+                    username        => $username,
+                    nasipaddress    => $nas,
+                    acctdate        => $month ,
+                });
 
-	return if ! $rs;
+    return if ! $rs;
 
-	my $hours_used = $rs->ConnTotDuration();
+    my $hours_used = $rs->ConnTotDuration();
 
-	if ( $hours_used ) {
-		$hours_used = ( $hours_used / 60 / 60 );
-		$hours_used = sprintf ( '%.2f', $hours_used );
-	}
+    if ( $hours_used ) {
+        $hours_used = ( $hours_used / 60 / 60 );
+        $hours_used = sprintf ( '%.2f', $hours_used );
+    }
 
-	return $hours_used;
+    return $hours_used;
 }
 
 # common methods
 
 sub date {
 
-	use DateTime;
+    use DateTime;
 
-	my $self	= shift;
-	my $params	= shift if @_;
+    my $self    = shift;
+    my $params  = shift if @_;
 
-	if ( exists $params->{ get } && $params->{ get } !~ m{ \A (day|month|year) \z }xms ) {
-	
-		croak "\n\nThe get parameter must be one of 'day', 'month' or 'year': $!";
-	}
+    if ( exists $params->{ get } && $params->{ get } !~ m{ \A (day|month|year) \z }xms ) {
+    
+        croak "\n\nThe get parameter must be one of 'day', 'month' or 'year': $!";
+    }
 
-	my $get_what = ( $params->{ get } )
-		? $params->{ get }
-		: '';
+    my $get_what = ( $params->{ get } )
+        ? $params->{ get }
+        : '';
 
-	my $datetime;
+    my $datetime;
 
-	if ( $params->{ datetime } ) {
-		$datetime = $params->{ datetime };
-	}
-	else {
-		$datetime = DateTime->now( time_zone => $self->TIMEZONE() );
-	}
+    if ( $params->{ datetime } ) {
+        $datetime = $params->{ datetime };
+    }
+    else {
+        $datetime = DateTime->now( time_zone => $self->TIMEZONE() );
+    }
 
-	if ( $get_what eq 'day' ) {
-		return $datetime->ymd();
-	}
-	
-	if ( $get_what eq 'month' ) {
+    if ( $get_what eq 'day' ) {
+        return $datetime->ymd();
+    }
+    
+    if ( $get_what eq 'month' ) {
 
-		my $month = $datetime->month();
-		
-		if ( length( $month ) == 1 ) {
-			$month = 0 . $month;
-		}
+        my $month = $datetime->month();
+        
+        if ( length( $month ) == 1 ) {
+            $month = 0 . $month;
+        }
 
-		my $date =	$datetime->year() . "-" . $month;  
+        my $date =  $datetime->year() . "-" . $month;  
 
-		return $date;
-	}
+        return $date;
+    }
 
-	if ( $get_what eq 'year' ) {
-		my $date = 	$datetime->year();
+    if ( $get_what eq 'year' ) {
+        my $date =  $datetime->year();
 
-		return $date;
-	}
+        return $date;
+    }
 
-	return ( DateTime->now( time_zone => $self->TIMEZONE()) );
+    return ( DateTime->now( time_zone => $self->TIMEZONE()) );
 }
 sub password {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $username 	= $params->{ username };
-	my $new_pw	 	= $params->{ password };
+    my $username    = $params->{ username };
+    my $new_pw      = $params->{ password };
 
-	my $schema	= $self->_schema();
+    my $schema  = $self->_schema();
 
-	my $rs		= $schema->resultset( 'Radcheck' )->find({ UserName => $username });
+    my $rs      = $schema->resultset( 'Radcheck' )->find({ UserName => $username });
 
-	return if ! $rs;
+    return if ! $rs;
 
-	my $orig_pw = $rs->Value();
+    my $orig_pw = $rs->Value();
 
-	return $orig_pw if ! $new_pw;
+    return $orig_pw if ! $new_pw;
 
-	if ( $new_pw ) {
+    if ( $new_pw ) {
 
-		$rs->Value( $new_pw );
-		$rs->update();
+        $rs->Value( $new_pw );
+        $rs->update();
 
-	}
-	
-	return $self->password({ username => $username });
+    }
+    
+    return $self->password({ username => $username });
 }
 
 # NAS 
 
 sub update_ras_name {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $day		= $params->{ day };
-	
-	my $ras_href = $self->RAS();
+    my $day     = $params->{ day };
+    
+    my $ras_href = $self->RAS();
 
-	my @classified_ras;
+    my @classified_ras;
 
-	my $schema = $self->_schema();
+    my $schema = $self->_schema();
 
-	while ( my( $ras_class, $ras_regex ) = ( each %$ras_href ) ) {
+    while ( my( $ras_class, $ras_regex ) = ( each %$ras_href ) ) {
    
-		my @ras_ips;
+        my @ras_ips;
 
-		if ( $ras_regex =~ /|/ ) {
-			@ras_ips = split ( /\|/, $ras_regex );
-		}
-		else {
-			push @ras_ips, $ras_regex;
-		}
-	
-		for my $ras_to_classify ( @ras_ips ) {
-	
-			my $rs = $schema->resultset( 'Radacct' )->search({	
-								
-								'AcctStopTime' => { like => "$day%" },
-								'NASIPAddress' => { like => "$ras_to_classify%" },
-							
-							});
+        if ( $ras_regex =~ /|/ ) {
+            @ras_ips = split ( /\|/, $ras_regex );
+        }
+        else {
+            push @ras_ips, $ras_regex;
+        }
+    
+        for my $ras_to_classify ( @ras_ips ) {
+    
+            my $rs = $schema->resultset( 'Radacct' )->search({  
+                                
+                                'AcctStopTime' => { like => "$day%" },
+                                'NASIPAddress' => { like => "$ras_to_classify%" },
+                            
+                            });
 
-			$rs->update({ NASIPAddress => $ras_class });
-		}
-	}
+            $rs->update({ NASIPAddress => $ras_class });
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 # mathematical functions
 
 sub seconds_to_hours {
 
-	my $self	= shift;
-	my $seconds = shift;
+    my $self    = shift;
+    my $seconds = shift;
 
-	my $hours	= sprintf ( '%.2f', ( ($seconds / 60) / 60 ) );
-	return $hours;
+    my $hours   = sprintf ( '%.2f', ( ($seconds / 60) / 60 ) );
+    return $hours;
 }
 sub bytes_to_megabytes {
 
-	my $self	= shift;
-	my $bytes	= shift;
+    my $self    = shift;
+    my $bytes   = shift;
 
-	my $mb		= sprintf ( '%.2f', ( ($bytes / 1024) / 1024 ) );
-	return $mb;
+    my $mb      = sprintf ( '%.2f', ( ($bytes / 1024) / 1024 ) );
+    return $mb;
 }
 sub bytes_to_gigabytes {
 
-	my $self	= shift;
-	my $bytes	= shift;
+    my $self    = shift;
+    my $bytes   = shift;
 
-	my $gb		= sprintf ( '%.2f', ( ($bytes / 1024) / 1024 /1024 ) );
-	return $gb;
+    my $gb      = sprintf ( '%.2f', ( ($bytes / 1024) / 1024 /1024 ) );
+    return $gb;
 }
 
 # internal methods
 
 sub _create_archive_table {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $archive_table = $params->{ tablename };
-	
-	my $dbh = $self->_db_handle();
+    my $archive_table = $params->{ tablename };
+    
+    my $dbh = $self->_db_handle();
 
-	$dbh->do ("
+    $dbh->do ("
 
-  	CREATE TABLE if not exists `$archive_table` (
-  	`RadAcctId` bigint(21) NOT NULL auto_increment,
-  	`AcctSessionId` varchar(32) NOT NULL default '',
-  	`AcctUniqueId` varchar(32) NOT NULL default '',
-  	`UserName` varchar(64) NOT NULL default '',
-  	`Realm` varchar(64) default '',
-  	`NASIPAddress` varchar(15) NOT NULL default '',
-  	`NASPortId` int(12) default NULL,
-  	`NASPortType` varchar(32) default NULL,
-  	`AcctStartTime` datetime NOT NULL default '0000-00-00 00:00:00',
-  	`AcctStopTime` datetime NOT NULL default '0000-00-00 00:00:00',
-  	`AcctSessionTime` int(12) default NULL,
-  	`AcctAuthentic` varchar(32) default NULL,
-  	`ConnectInfo_start` varchar(32) default NULL,
-  	`ConnectInfo_stop` varchar(32) default NULL,
-  	`AcctInputOctets` bigint(20) unsigned default NULL,
-  	`AcctOutputOctets` bigint(20) unsigned default NULL,
-  	`CalledStationId` varchar(50) NOT NULL default '',
-  	`CallingStationId` varchar(50) NOT NULL default '',
-  	`AcctTerminateCause` varchar(32) NOT NULL default '',
-  	`ServiceType` varchar(32) default NULL,
-  	`FramedProtocol` varchar(32) default NULL,
-  	`FramedIPAddress` varchar(15) NOT NULL default '',
-  	`AcctStartDelay` int(12) default NULL,
-  	`AcctStopDelay` int(12) default NULL,
-  	PRIMARY KEY  (`RadAcctId`),
-  	KEY `UserName` (`UserName`),
-  	KEY `FramedIPAddress` (`FramedIPAddress`),
-  	KEY `AcctSessionId` (`AcctSessionId`),
-  	KEY `AcctUniqueId` (`AcctUniqueId`),
-  	KEY `AcctStartTime` (`AcctStartTime`),
-  	KEY `AcctStopTime` (`AcctStopTime`),
-  	KEY `NASIPAddress` (`NASIPAddress`)
+    CREATE TABLE if not exists `$archive_table` (
+    `RadAcctId` bigint(21) NOT NULL auto_increment,
+    `AcctSessionId` varchar(32) NOT NULL default '',
+    `AcctUniqueId` varchar(32) NOT NULL default '',
+    `UserName` varchar(64) NOT NULL default '',
+    `Realm` varchar(64) default '',
+    `NASIPAddress` varchar(15) NOT NULL default '',
+    `NASPortId` int(12) default NULL,
+    `NASPortType` varchar(32) default NULL,
+    `AcctStartTime` datetime NOT NULL default '0000-00-00 00:00:00',
+    `AcctStopTime` datetime NOT NULL default '0000-00-00 00:00:00',
+    `AcctSessionTime` int(12) default NULL,
+    `AcctAuthentic` varchar(32) default NULL,
+    `ConnectInfo_start` varchar(32) default NULL,
+    `ConnectInfo_stop` varchar(32) default NULL,
+    `AcctInputOctets` bigint(20) unsigned default NULL,
+    `AcctOutputOctets` bigint(20) unsigned default NULL,
+    `CalledStationId` varchar(50) NOT NULL default '',
+    `CallingStationId` varchar(50) NOT NULL default '',
+    `AcctTerminateCause` varchar(32) NOT NULL default '',
+    `ServiceType` varchar(32) default NULL,
+    `FramedProtocol` varchar(32) default NULL,
+    `FramedIPAddress` varchar(15) NOT NULL default '',
+    `AcctStartDelay` int(12) default NULL,
+    `AcctStopDelay` int(12) default NULL,
+    PRIMARY KEY  (`RadAcctId`),
+    KEY `UserName` (`UserName`),
+    KEY `FramedIPAddress` (`FramedIPAddress`),
+    KEY `AcctSessionId` (`AcctSessionId`),
+    KEY `AcctUniqueId` (`AcctUniqueId`),
+    KEY `AcctStartTime` (`AcctStartTime`),
+    KEY `AcctStopTime` (`AcctStopTime`),
+    KEY `NASIPAddress` (`NASIPAddress`)
 
-	)TYPE=MyISAM;");
+    )TYPE=MyISAM;");
 
-	return 1;
+    return 1;
 }
 sub _schema {
 
-	use FreeRADIUS::Database::Storage;
-	use FreeRADIUS::Database::Storage::Replicated;
+    use FreeRADIUS::Database::Storage;
+    use FreeRADIUS::Database::Storage::Replicated;
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $database_servers = $self->_database_config();
+    my $database_servers = $self->_database_config();
 
-	my $master	= shift @{ $database_servers };
+    my $master  = shift @{ $database_servers };
 
-	if ( ! $self->IN_TEST_MODE() && $self->ENABLE_REPLICATION() ) {
+    if ( ! $self->IN_TEST_MODE() && $self->ENABLE_REPLICATION() ) {
 
-		my $schema = FreeRADIUS::Database::Storage::Replicated->connect( @{ $master } );
+        my $schema = FreeRADIUS::Database::Storage::Replicated->connect( @{ $master } );
 
-		$schema->storage->connect_replicants( @{ $database_servers } );
+        $schema->storage->connect_replicants( @{ $database_servers } );
 
-		return $schema;
-	}
+        return $schema;
+    }
 
-	my $schema
-		= FreeRADIUS::Database::Storage->connect( @{ $master } );
+    my $schema
+        = FreeRADIUS::Database::Storage->connect( @{ $master } );
 
-	return $schema;
+    return $schema;
 }
 sub _database_config {
 
-	my $self	= shift;
-	my $params	= shift;
+    my $self    = shift;
+    my $params  = shift;
 
-	my $database_servers; # aref
+    my $database_servers; # aref
 
-	# configure the test server if required
+    # configure the test server if required
 
-	if ( $self->IN_TEST_MODE() ){
+    if ( $self->IN_TEST_MODE() ){
 
-		push( @$database_servers, [
-								$self->TEST_MODE_SOURCE(),
-							]);
+        push( @$database_servers, [
+                                $self->TEST_MODE_SOURCE(),
+                            ]);
 
-		return $database_servers;
-	}
+        return $database_servers;
+    }
 
-	# configure the master
+    # configure the master
 
-	push( @$database_servers, [
-								$self->MASTER_SOURCE(),
-								$self->MASTER_USER(),
-								$self->MASTER_PASS(),
-							]);
+    push( @$database_servers, [
+                                $self->MASTER_SOURCE(),
+                                $self->MASTER_USER(),
+                                $self->MASTER_PASS(),
+                            ]);
 
-	# ...and add any slaves
+    # ...and add any slaves
 
-	if ( $self->ENABLE_REPLICATION() && $self->SLAVE_SERVERS() ){
-		
-		for my $slave_number ( 1 .. $self->SLAVE_SERVERS() ){
-			
-			my $slave_info = "SLAVE_${ slave_number }_";
+    if ( $self->ENABLE_REPLICATION() && $self->SLAVE_SERVERS() ){
+        
+        for my $slave_number ( 1 .. $self->SLAVE_SERVERS() ){
+            
+            my $slave_info = "SLAVE_${ slave_number }_";
 
-			my $slave; # aref
+            my $slave; # aref
 
-			for my $item ( qw/ SOURCE USER PASS / ){
-					
-				my $function = $slave_info . $item;
-				
-				push @$slave, $self->$function();
-			}		
-				
-			push @$database_servers, $slave;
-		}
-	}
+            for my $item ( qw/ SOURCE USER PASS / ){
+                    
+                my $function = $slave_info . $item;
+                
+                push @$slave, $self->$function();
+            }       
+                
+            push @$database_servers, $slave;
+        }
+    }
 
-	# if the master is locked for maintenance, shift it off
-	# the stack
+    # if the master is locked for maintenance, shift it off
+    # the stack
 
-	if ( $self->MASTER_LOCKED() ) {
-		
-		shift @$database_servers;
-	}
+    if ( $self->MASTER_LOCKED() ) {
+        
+        shift @$database_servers;
+    }
 
-	return $database_servers;
+    return $database_servers;
 }
 sub _nothing {0;} # POD
 
@@ -871,27 +871,27 @@ FreeRADIUS::Database - RADIUS user, client and database manager.
   # get a users daily aggregated totals
 
   my $href = $radius->daily_login_totals({ 
-		  						username => 'un',
-								nas		 => 'nasipaddress',
-								day		 => 'YYYY-MM-DD',
-							});
-	
+                                username => 'un',
+                                nas      => 'nasipaddress',
+                                day      => 'YYYY-MM-DD',
+                            });
+    
   # get a users monthly aggregated totals
 
   my $aoh = $radius->monthly_login_totals({
-								username 	=> 'un',
-								nas		 	=> 'nasipaddress',
-								month	 	=> 'YY-MM',
-								num_months	=> 12, # default 11, max 36
-							});
+                                username    => 'un',
+                                nas         => 'nasipaddress',
+                                month       => 'YY-MM',
+                                num_months  => 12, # default 11, max 36
+                            });
 
   # get a user's hours used (month)
 
   my $float = $radius->month_hours_used({
-		  						username	=> 'un',
-								nas			=> 'nasipaddress',	# defaults to 'dialup'
-								month		=> 'YYYY-MM',		# defaults to today's month
-							});
+                                username    => 'un',
+                                nas         => 'nasipaddress',  # defaults to 'dialup'
+                                month       => 'YYYY-MM',       # defaults to today's month
+                            });
 
 
 =head1 DESCRIPTION
@@ -986,10 +986,10 @@ particular day. It is particularly handy if you are classifying NASs.
 
 The parameters are passed in within a hash reference:
 
-	username	=> STRING
-	nas			=> STRING
-	date		=> 'YYYY-MM-DD'
-	raw			=> BOOL # optional
+    username    => STRING
+    nas         => STRING
+    date        => 'YYYY-MM-DD'
+    raw         => BOOL # optional
 
 The first three are mandatory. The 'raw' parameter is optional. If
 present and set to true, upload and download will be multiplied into
@@ -1011,10 +1011,10 @@ be being used.
 
 The parameters are passed in as a hash reference:
 
-	username	=> STRING
-	nas			=> STRING
-	month		=> YYYY-MM	# optional
-	num_months	=> INTEGER  # optional
+    username    => STRING
+    nas         => STRING
+    month       => YYYY-MM  # optional
+    num_months  => INTEGER  # optional
 
 The username parameter is mandatory. The 'nas' is a string that consists of
 one of the 'RAS classifications' specified in the configuration file, a NAS
@@ -1030,10 +1030,10 @@ that single month only.
 Returns an array reference of hash references, in order to integrate with numerous
 templating system's TMPL_LOOP structure. Each hash reference is in the following format:
 
-	month	 => 'Jan 2009',
-	upload	 => MB or GB decimal
-	download => MB or GB decimal
-	duration => hours decimal
+    month    => 'Jan 2009',
+    upload   => MB or GB decimal
+    download => MB or GB decimal
+    duration => hours decimal
 
 Returns undef if no rows are found in the database table.
 
@@ -1046,9 +1046,9 @@ Returns the number of hours used for an individual user's plan for any given mon
 
 Parameters must be passed in as a hash reference as such:
 
-	username	=> $username,	# mandatory
-	nas			=> $class,		# NAS class or IP
-	month		=> YYYY-MM,		# optional
+    username    => $username,   # mandatory
+    nas         => $class,      # NAS class or IP
+    month       => YYYY-MM,     # optional
 
 If month is not passed in, we will default to the current month. If 'class'
 is not passed in, we will default to 'dialup'.
@@ -1091,8 +1091,8 @@ This method acts as both a getter and a setter for a user's RADIUS password.
 
 The parameters are passed in as a hash reference in the following form:
 
-	username	=> 'username',
-	password	=> 'password'
+    username    => 'username',
+    password    => 'password'
 
 The username parameter is mandatory. If it is not passed in, or is not found the
 return is undef, otherwise the current user password is returned.

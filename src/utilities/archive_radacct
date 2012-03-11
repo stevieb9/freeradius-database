@@ -15,9 +15,9 @@ use FreeRADIUS::Database;
 my ( $month, $help, $man ) = 0;
 
 my $result = GetOptions(        
-				'month|m=s' => \$month,        
-				'help|h'    => \$help,        
-				'man|M'     => \$man,
+                'month|m=s' => \$month,        
+                'help|h'    => \$help,        
+                'man|M'     => \$man,
     );
 pod2usage({ -verbose => 1 }) if $help;
 pod2usage({ -verbose => 2 }) if $man;
@@ -26,13 +26,13 @@ pod2usage({        -msg        => "\n\n--month argument requires a parameter in 
         -verbose    => 1,
     }) if $month !~ m{ \A \d{4}-(0|1)\d \z }xms;
 
-my $radius	= FreeRADIUS::Database->new();
+my $radius  = FreeRADIUS::Database->new();
 
 if ( $month ) {
-	$radius->archive_radacct( { month => $month } );
+    $radius->archive_radacct( { month => $month } );
 }
 else {
-	$radius->archive_radacct();
+    $radius->archive_radacct();
 }
 
 __END__
@@ -40,21 +40,21 @@ __END__
 =head1 NAME
 
 archive_radacct - Remove a months worth of data out of the `radacct` table and
-				  archive it into a `radacct-YYYY-MM` table.
+                  archive it into a `radacct-YYYY-MM` table.
 
 =head1 SYNOPSIS    
-	
-	# specify a specific month to process    
+    
+    # specify a specific month to process    
 
-	archive_radacct --month|-m 2009-06 
-	
-	# display help    
-	
-	archive_radacct --help|-h    
+    archive_radacct --month|-m 2009-06 
+    
+    # display help    
+    
+    archive_radacct --help|-h    
 
-	# display the manual page    
+    # display the manual page    
 
-	archive_radacct  --man|-M
+    archive_radacct  --man|-M
 
 =head1 OPTIONS
 

@@ -12,8 +12,8 @@ can_ok( 'FreeRADIUS::Database', '_nothing' );
 
 { # test for our vim fold to make `cover` happy
 
-	my $R	= FreeRADIUS::Database->new();
-	my $ret	= $R->_nothing();
+    my $R   = FreeRADIUS::Database->new();
+    my $ret = $R->_nothing();
 
     #SKIP
     #is ( $ret, 0, "_nothing is literally nothing" );

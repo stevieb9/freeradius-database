@@ -7,21 +7,21 @@ use DateTime;
 
 use FreeRADIUS::Database;
 
-my $radius	= FreeRADIUS::Database->new();
+my $radius  = FreeRADIUS::Database->new();
 
-my $date	= DateTime->new( 
-	
-							time_zone 	=> $radius->TIMEZONE(),
-							year		=> 2009,
-							month		=> 06,
-							day			=> 01,
-						);
+my $date    = DateTime->new( 
+    
+                            time_zone   => $radius->TIMEZONE(),
+                            year        => 2009,
+                            month       => 06,
+                            day         => 01,
+                        );
 
 for ( 1..240 ) {
 
-	my $day	= $date->ymd();
+    my $day = $date->ymd();
 
-	$radius->update_ras_name( { day => $day } );
-	
-	$date->add( days => 1 );
+    $radius->update_ras_name( { day => $day } );
+    
+    $date->add( days => 1 );
 }

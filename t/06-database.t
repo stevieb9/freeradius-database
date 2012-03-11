@@ -15,9 +15,9 @@ $ENV{ FREERADIUS_DATABASE_CONFIG } = 't/freeradius_database.conf-dist';
 
 { # test schema availability
 
-	my $r = FreeRADIUS::Database->new();
+    my $r = FreeRADIUS::Database->new();
 
-	my $schema = $r->_schema();
+    my $schema = $r->_schema();
 
-	isa_ok( $schema, 'FreeRADIUS::Database::Storage', "FreeRADIUS::Database can produce a proper schema" );
+    isa_ok( $schema, 'FreeRADIUS::Database::Storage', "FreeRADIUS::Database can produce a proper schema" );
 }

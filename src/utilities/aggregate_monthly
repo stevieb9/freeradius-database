@@ -17,41 +17,41 @@ my $result = GetOptions(
                 'month|m=s' => \$month,
                 'help|h'    => \$help,
                 'man|M'     => \$man,
-				'verbose|v'	=> \$verbose,
-			);
+                'verbose|v' => \$verbose,
+            );
 
 pod2usage({ -verbose => 1 }) if $help;
 pod2usage({ -verbose => 2 }) if $man;
 
 if ( $month && $month !~ m{ \A \d{4}-(0|1)\d \z }xms ) {
 
-	pod2usage({ 
-		-msg        => "\n\n--month argument requires a parameter in the form YYYY-MM\n\n",
-		-verbose    => 1,
-	});
+    pod2usage({ 
+        -msg        => "\n\n--month argument requires a parameter in the form YYYY-MM\n\n",
+        -verbose    => 1,
+    });
 }
 
 my $radius = FreeRADIUS::Database->new();
 
 if ( $month ) {
 
-	my $agg_result = $radius->aggregate_monthly( { month => $month } );
+    my $agg_result = $radius->aggregate_monthly( { month => $month } );
 
-	if ( $verbose && $agg_result ) {
-		print "aggregate_monthly failed during the manual run for $month!: $!";
-	}
+    if ( $verbose && $agg_result ) {
+        print "aggregate_monthly failed during the manual run for $month!: $!";
+    }
 }
 else {
-	
-	my $agg_result = $radius->aggregate_monthly();
+    
+    my $agg_result = $radius->aggregate_monthly();
 
-	if ( $verbose && $agg_result ) {
-		print "aggregate_monthly failed during the automated run!: $!";
-	}
+    if ( $verbose && $agg_result ) {
+        print "aggregate_monthly failed during the automated run!: $!";
+    }
 }
 
 if ( $verbose ) {
-	print "aggregate_monthly completed successfully\n";
+    print "aggregate_monthly completed successfully\n";
 }
 
 
@@ -75,9 +75,9 @@ aggregate_monthly - Utility script for use with FreeRADIUS::Database
 
     aggregate_monthly --man|-M
 
-	# be verbose
-	
-	aggregate_monthly --verbose|-v
+    # be verbose
+    
+    aggregate_monthly --verbose|-v
 
 =head1 OPTIONS
 

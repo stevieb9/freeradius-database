@@ -13,36 +13,36 @@ can_ok ( 'FreeRADIUS::Database', 'password' );
 
 { #getter
 
-	my $rad 	= FreeRADIUS::Database->new();
-	my $pass	= $rad->password({ username => 'test1' });
+    my $rad     = FreeRADIUS::Database->new();
+    my $pass    = $rad->password({ username => 'test1' });
 
-	ok ( $pass eq 'test1', "password returns the correct password" );
+    ok ( $pass eq 'test1', "password returns the correct password" );
 }
 
 { #setter
 
-	my $rad		= FreeRADIUS::Database->new();
-	my $orig_pw	= $rad->password({ username => 'test2' });
+    my $rad     = FreeRADIUS::Database->new();
+    my $orig_pw = $rad->password({ username => 'test2' });
 
-	my $new_pw	= 'testing';
+    my $new_pw  = 'testing';
 
-	$rad->password({ username => 'test2', password => $new_pw });
+    $rad->password({ username => 'test2', password => $new_pw });
 
-	my $cur_pw = $rad->password({ username => 'test2' });
+    my $cur_pw = $rad->password({ username => 'test2' });
 
-	ok ( $cur_pw ne $orig_pw, "The updated password does not match the original" );
-	ok ( $cur_pw eq $new_pw,  "The updated password matches the new password" );
+    ok ( $cur_pw ne $orig_pw, "The updated password does not match the original" );
+    ok ( $cur_pw eq $new_pw,  "The updated password matches the new password" );
 
-	my $last_pw = $rad->password({ username => 'test2', password => $orig_pw });
-	ok ( $orig_pw eq $last_pw, "We can reset the password back to the original" );
+    my $last_pw = $rad->password({ username => 'test2', password => $orig_pw });
+    ok ( $orig_pw eq $last_pw, "We can reset the password back to the original" );
 }
 
 { # bad username
 
-	my $rad		= FreeRADIUS::Database->new();
-	
-	my $pw		= $rad->password({ username => 'abaduser' });
+    my $rad     = FreeRADIUS::Database->new();
+    
+    my $pw      = $rad->password({ username => 'abaduser' });
 
-	is( $pw, undef, "supplying a faulty username returns undef" );
+    is( $pw, undef, "supplying a faulty username returns undef" );
 
 }

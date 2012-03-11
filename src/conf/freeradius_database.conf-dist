@@ -1,24 +1,24 @@
 ; FreeRADIUS::Database configuration file
 
 [VERSION]
-version					= 0.02
+version                 = 0.02
 
 [Global]
-timezone				= America/New_York
-ras_classification		= 0
-delete_after_archive	= 1	; delete radacct month after archive?
-months_after_archive	= 3
-config_dir				= /usr/local/etc
-script_dir				= /usr/local/sbin
-in_test_mode			= 1
+timezone                = America/New_York
+ras_classification      = 0
+delete_after_archive    = 1 ; delete radacct month after archive?
+months_after_archive    = 3
+config_dir              = /usr/local/etc
+script_dir              = /usr/local/sbin
+in_test_mode            = 1
 
 [RAS]
 ; used for RAS classification
 
-highspeed			= 10.0.0.1, 10.0.0.2 
-dialup				= 172.16.4, 172.16.25, 10.5.5.5
-slipstream			= 192.168
-hotspot				= 10.10.10, 10.10.9.5
+highspeed           = 10.0.0.1, 10.0.0.2 
+dialup              = 172.16.4, 172.16.25, 10.5.5.5
+slipstream          = 192.168
+hotspot             = 10.10.10, 10.10.9.5
 
 [Database]
 enable_replication      = 0
