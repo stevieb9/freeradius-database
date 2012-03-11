@@ -153,7 +153,8 @@ For example:
 
 	named_class = ras1.example.com, ras2.example.com, ras3.example.com
 
-
+You can use any names you wish. The defaults are there for illustrative
+purposes only.
 
 =head2 [ Database ]
 

@@ -841,12 +841,6 @@ FreeRADIUS::Database - RADIUS user, client and database manager.
 
   my $radius = FreeRADIUS::Database->new({ config => '/path/to/config.file' });
  
-  # using an environment variable to create a new object with an
-  # alternate config file
-
-  $ENV{ 'FREERADIUS_DATABASE_CONFIG' } = '/path/to/config.file';
-  my $radius = FreeRADIUS::Database->new();
-
   # aggregate yesterday's radacct data
 
   $radius->aggregate_daily();
@@ -876,7 +870,7 @@ FreeRADIUS::Database - RADIUS user, client and database manager.
                                 day      => 'YYYY-MM-DD',
                             });
     
-  # get a users monthly aggregated totals
+  # get a users monthly aggregated bandwidth/time totals
 
   my $aoh = $radius->monthly_login_totals({
                                 username    => 'un',
@@ -915,7 +909,7 @@ in a 'config' parameter with the alternate configuration file name. This
 parameter must be supplied within a hash reference.
 
 You can also override the default configuration file location by setting 
-the FREERADIUS_DATABASE_CONFIG } environment variable prior to making the call to new().
+the FREERADIUS_DATABASE_CONFIG environment variable prior to making the call to new().
 
 If a configuration file can not be found or read, or the object can not be created,
 the return will be undef.
